@@ -14,9 +14,8 @@ def load_beers():
 	'''
 	Loads beer data into a dataframe
 	'''
-	# zf = zipfile.ZipFile('beer_reviews.csv.zip') # having First.csv zipped file.
-	# df_beers_total = pd.read_csv(zf.open('beer_reviews.csv'))
-	df_beers_total = pd.read_csv('https://www.kaggle.com/rdoume/beerreviews?select=beer_reviews.csv')
+	zf = zipfile.ZipFile('beer_reviews.csv.zip') # having First.csv zipped file.
+	df_beers_total = pd.read_csv(zf.open('beer_reviews.csv'))
 	df_beers_total['brewery_name'] = df_beers_total['brewery_name'].astype(str)
 	styles = []
 	for style in df_beers_total['beer_style']:
