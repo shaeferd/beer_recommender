@@ -1,6 +1,5 @@
 streamlit==0.66.0
 pandas==1.1.1
-scikit-surprise==1.1.1
 cython
 surprise==0.1
 sklearn==0.0
