@@ -108,7 +108,7 @@ def main():
 			recommended_beers = get_my_top_beers('Me', algo, df_beers_total, df_my_beers, my_type)
 			"### Looks like you enjoy a nice %s beer! We highly recommend checking out these 5 beers below" % my_type
 			beer_image = Image.open(beer_type_map[my_type])
-			st.image(beer_image, width = 300, height = 300)
+			st.image(beer_image, width = 300)
 			for beer in recommended_beers[:5]:
 				"\#"+str(num) +' ' + str(beer)  
 				num += 1
