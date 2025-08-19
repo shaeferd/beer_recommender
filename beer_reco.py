@@ -8,6 +8,7 @@ from PIL import Image
 from beer_reco_utils import load_beers, load_common_beers, get_my_top_beers
 import numpy as np
 from sklearn.decomposition import TruncatedSVD
+from scipy.sparse import csr_matrix
 
 
 def main():
@@ -87,21 +88,24 @@ def main():
 		df_beers.reset_index(level=0, inplace=True)
 		df_beers = shuffle(df_beers)
 
-		# Build a user-item matrix and compute latent factors using TruncatedSVD
-		pivot = df_beers.pivot_table(index='review_profilename', columns='beer_name', values='review_taste', aggfunc='mean')
-		pivot = pivot.fillna(0.0)
-		# Choose a reasonable rank based on data shape
-		n_components = int(min(50, max(2, min(pivot.shape[0] - 1, pivot.shape[1] - 1))))
+		# Build sparse user-item matrix (avoids dense pivot OOM)
+		user_cats = df_beers['review_profilename'].astype('category')
+		item_cats = df_beers['beer_name'].astype('category')
+		row_idx = user_cats.cat.codes.to_numpy()
+		col_idx = item_cats.cat.codes.to_numpy()
+		vals = df_beers['review_taste'].astype(float).to_numpy()
+		X = csr_matrix((vals, (row_idx, col_idx)), shape=(len(user_cats.cat.categories), len(item_cats.cat.categories)))
+		# Cap components to keep memory small
+		n_components = int(min(20, max(2, min(X.shape[0] - 1, X.shape[1] - 1))))
 		svd = TruncatedSVD(n_components=n_components, random_state=42)
-		user_features = svd.fit_transform(pivot.values)
-		recon = np.dot(user_features, svd.components_)
-		# Map predictions for the 'Me' user
-		if 'Me' in pivot.index:
-			me_idx = list(pivot.index).index('Me')
-			pred_row = recon[me_idx]
-			beer_to_pred = dict(zip(pivot.columns, pred_row))
-		else:
-			beer_to_pred = {}
+		user_features = svd.fit_transform(X)
+		# Predictions for 'Me'
+		beer_to_pred = {}
+		if 'Me' in list(user_cats.cat.categories):
+			me_idx = list(user_cats.cat.categories).index('Me')
+			pred_row = np.dot(user_features[me_idx], svd.components_)
+			beer_names = list(item_cats.cat.categories)
+			beer_to_pred = dict(zip(beer_names, pred_row))
 		df_beers_total = df_beers_total[df_beers_total['beer_style'].isin(beer_type)]
 
 		# Dictionary to map styles to images
