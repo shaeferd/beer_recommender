@@ -20,7 +20,7 @@ def main():
 	df_beers_total = load_beers()
 
 	# Dropdown menu to select your favorite beer type
-	"**\* = required**"
+	r"**\* = required**"
 	beer_type = st.multiselect(
 		"Select your favorite beer type (Optional)",
 		list(set(df_beers_total['beer_style'])))
@@ -118,7 +118,7 @@ def main():
 			beer_image = Image.open(beer_type_map[my_type])
 			st.image(beer_image, width = 300)
 			for beer in recommended_beers[:5]:
-				"\#"+str(num) +' ' + str(beer)  
+				"\\#"+str(num) +' ' + str(beer)  
 				num += 1
 if __name__ == '__main__':
 	"# Welcome to my beer recommendation app!"
