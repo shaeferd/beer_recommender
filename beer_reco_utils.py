@@ -1,8 +1,6 @@
 import streamlit as st
 import pandas as pd
-from surprise import Reader, Dataset, SVD, accuracy
 import sklearn.metrics as skmetric
-from surprise.model_selection import GridSearchCV, RandomizedSearchCV, cross_validate
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 from sklearn.utils import shuffle
 from sklearn.preprocessing import MinMaxScaler
@@ -78,11 +76,11 @@ def load_common_beers(df_beers_total, num_per_style = 15):
 # Removed deprecated caching here because this function depends on a model object
 # which is not suitable for st.cache_data/resource hashing.
 
-def get_my_top_beers(name, algo, df_beers_total, df_my_beers, beer_style):
+def get_my_top_beers(name, beer_to_pred_rating, df_beers_total, df_my_beers, beer_style):
 	'''
 	Returns a dataframe of the top-recommended beers according to what SVD predicts
 	name: User giving rankings
-	algo: Pretrained SVD model
+	beer_to_pred_rating: Dict mapping beer name to predicted rating for `name`
 	df_beers_total: total beer rankings data
 	df_my_beers: 
 	beer_style: The style of beer to filter to
@@ -90,7 +88,7 @@ def get_my_top_beers(name, algo, df_beers_total, df_my_beers, beer_style):
 	my_beers = []
 	for beer in df_beers_total[df_beers_total['beer_style'] == beer_style]['beer_name'].unique():
 		if beer not in list(df_my_beers['beer_name'].unique()):
-			est = algo.predict(name, beer).est
+			est = beer_to_pred_rating.get(beer, 0.0)
 			my_beers.append((beer, est))
 	my_beers = sorted(my_beers, key = lambda x:x[1], reverse = True)
 	return [x[0] for x in my_beers]

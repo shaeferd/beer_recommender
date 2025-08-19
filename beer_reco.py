@@ -1,13 +1,13 @@
 import streamlit as st
 import pandas as pd
-from surprise import Reader, Dataset, SVD, accuracy
 import sklearn.metrics as skmetric
-from surprise.model_selection import GridSearchCV, RandomizedSearchCV, cross_validate
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 from sklearn.utils import shuffle
 from sklearn.preprocessing import MinMaxScaler
 from PIL import Image
 from beer_reco_utils import load_beers, load_common_beers, get_my_top_beers
+import numpy as np
+from sklearn.decomposition import TruncatedSVD
 
 
 def main():
@@ -87,13 +87,21 @@ def main():
 		df_beers.reset_index(level=0, inplace=True)
 		df_beers = shuffle(df_beers)
 
-		# Fits pre-tuned SVD recommender system to combined ratings data
-		# In development phase, using 5-fold cross-validation, the average RMSE was 0.56 for the below parameters
-		reader = Reader(rating_scale=(1, 5))
-		data = Dataset.load_from_df(df_beers[['review_profilename', 'beer_name', 'review_taste']], reader)
-		algo = SVD(n_epochs= 6, lr_all= 0.03, reg_all= 0.2)
-		trainset = data.build_full_trainset()
-		algo.fit(trainset)
+		# Build a user-item matrix and compute latent factors using TruncatedSVD
+		pivot = df_beers.pivot_table(index='review_profilename', columns='beer_name', values='review_taste', aggfunc='mean')
+		pivot = pivot.fillna(0.0)
+		# Choose a reasonable rank based on data shape
+		n_components = int(min(50, max(2, min(pivot.shape[0] - 1, pivot.shape[1] - 1))))
+		svd = TruncatedSVD(n_components=n_components, random_state=42)
+		user_features = svd.fit_transform(pivot.values)
+		recon = np.dot(user_features, svd.components_)
+		# Map predictions for the 'Me' user
+		if 'Me' in pivot.index:
+			me_idx = list(pivot.index).index('Me')
+			pred_row = recon[me_idx]
+			beer_to_pred = dict(zip(pivot.columns, pred_row))
+		else:
+			beer_to_pred = {}
 		df_beers_total = df_beers_total[df_beers_total['beer_style'].isin(beer_type)]
 
 		# Dictionary to map styles to images
@@ -105,7 +113,7 @@ def main():
 		# Loops through your favorite beer types and uses the SVD model to recommend 5 beers for each style
 		for my_type in beer_type:
 			num = 1
-			recommended_beers = get_my_top_beers('Me', algo, df_beers_total, df_my_beers, my_type)
+			recommended_beers = get_my_top_beers('Me', beer_to_pred, df_beers_total, df_my_beers, my_type)
 			"### Looks like you enjoy a nice %s beer! We highly recommend checking out these 5 beers below" % my_type
 			beer_image = Image.open(beer_type_map[my_type])
 			st.image(beer_image, width = 300)
