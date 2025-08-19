@@ -14,7 +14,7 @@ def main():
 	
 	# Display main beer image
 	image = Image.open('beer_images/beer.jpg')
-	st.image(image, use_column_width=True)
+	st.image(image, use_container_width=True)
 
 	# Load and cache beer rankings dataframe
 	df_beers_total = load_beers()
