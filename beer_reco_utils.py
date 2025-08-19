@@ -9,7 +9,7 @@ from sklearn.preprocessing import MinMaxScaler
 from PIL import Image
 import zipfile
 
-@st.cache
+@st.cache_data
 def load_beers():
 	'''
 	Loads beer data into a dataframe
@@ -51,7 +51,7 @@ def load_beers():
 	return df_beers_total
 
 
-@st.cache
+@st.cache_data
 def load_common_beers(df_beers_total, num_per_style = 15):
 	'''
 	Returns a dataframe to serve as a list of recommended beers
@@ -75,7 +75,9 @@ def load_common_beers(df_beers_total, num_per_style = 15):
 
 
 
-@st.cache
+# Removed deprecated caching here because this function depends on a model object
+# which is not suitable for st.cache_data/resource hashing.
+
 def get_my_top_beers(name, algo, df_beers_total, df_my_beers, beer_style):
 	'''
 	Returns a dataframe of the top-recommended beers according to what SVD predicts

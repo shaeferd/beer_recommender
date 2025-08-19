@@ -66,11 +66,11 @@ def main():
 		"Searching for tasty beers..."
 
 		# Predicts your favorite beer type based on your ratings and sorts in order of favorite to least favorite type
-		beer_types = df_my_beers.groupby('beer_style')[['beer_style', 'review_taste']].mean()
-		beer_types2 = df_my_beers.groupby('beer_style')[['beer_style', 'review_taste']].count()
+		beer_types = df_my_beers.groupby('beer_style')['review_taste'].mean().to_frame()
+		beer_types2 = df_my_beers.groupby('beer_style')['review_taste'].count().to_frame()
 		beer_types['review'] = beer_types2['review_taste']
 		beer_types[['review_taste', 'review']] = MinMaxScaler().fit_transform(beer_types[['review_taste', 'review']])
-		beer_types['overall'] = (beer_types['review_taste'] + beer_types2['review_taste']) / 2
+		beer_types['overall'] = (beer_types['review_taste'] + beer_types['review']) / 2
 		beer_types = beer_types.sort_values(by = 'overall', ascending = False)
 		if beer_type:
 			beer_type = beer_type
